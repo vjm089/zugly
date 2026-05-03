@@ -3,7 +3,7 @@ import { fetchLiveTrip, formatTime, calcDelayMin, getLiveProgress } from '../api
 import TrainMap from './TrainMap.jsx'
 
 const s = {
-  wrap: { position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 150, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 40 },
+  wrap: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg)', zIndex: 9999, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 40, animation: 'fadeUp 0.2s ease' },
   header: { padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 12, paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' },
   backBtn: { background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 10, padding: '0 16px', height: 44, color: 'var(--text)', fontSize: 15, flexShrink: 0 },
   logo: { fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 500, color: 'var(--amber)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
@@ -165,10 +165,12 @@ export default function LiveView({ trip, onBack }) {
             </div>
 
             <div style={s.mapWrap}>
-              {stopovers.length > 0
-                ? <TrainMap stopovers={stopovers} polyline={liveData?.polyline} currentIdx={currentIdx} />
-                : <div style={s.noMapBox}><span style={s.noMapText}>Kartendaten nicht verfügbar</span></div>
-              }
+              <TrainMap stopovers={stopovers} polyline={liveData?.polyline} currentIdx={currentIdx} />
+              {stopovers.length === 0 && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)', textAlign: 'center' }}>
+                  Keine Streckendetails verfügbar
+                </div>
+              )}
             </div>
 
             {nextStop && (

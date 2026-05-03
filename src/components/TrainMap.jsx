@@ -3,55 +3,106 @@ import { useEffect, useRef } from 'react'
 export default function TrainMap({ stopovers, polyline, currentIdx }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
+  const layersRef = useRef([])
 
+  // Initialize map once
   useEffect(() => {
     const L = window.L
     if (!L || !containerRef.current || mapRef.current) return
 
-    const map = L.map(containerRef.current, { zoomControl: true, attributionControl: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?lang=de', { maxZoom: 18, attribution: '© OpenStreetMap-Mitwirkende © CARTO' }).addTo(map)
+    const map = L.map(containerRef.current, {
+      zoomControl: true,
+      attributionControl: false,
+      scrollWheelZoom: false,
+    })
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?lang=de', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap-Mitwirkende © CARTO',
+    }).addTo(map)
+    map.setView([51.16, 10.45], 6)
     mapRef.current = map
+
+    // Critical: invalidate size after the overlay finishes its layout/animation
+    const t1 = setTimeout(() => map.invalidateSize(), 100)
+    const t2 = setTimeout(() => map.invalidateSize(), 400)
+
+    return () => {
+      clearTimeout(t1); clearTimeout(t2)
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
+
+  // Re-draw layers whenever stopovers or currentIdx change
+  useEffect(() => {
+    const L = window.L
+    const map = mapRef.current
+    if (!L || !map) return
+
+    // Clear old layers
+    layersRef.current.forEach(l => { try { l.remove() } catch {} })
+    layersRef.current = []
 
     const stops = (stopovers || []).filter(s => s.stop?.location)
     if (!stops.length) return
 
     const coords = stops.map(s => [s.stop.location.latitude, s.stop.location.longitude])
 
+    // Base line
     if (polyline?.features?.[0]?.geometry?.coordinates) {
       const lc = polyline.features[0].geometry.coordinates.map(c => [c[1], c[0]])
-      L.polyline(lc, { color: '#5a5a5a', weight: 2 }).addTo(map)
+      layersRef.current.push(L.polyline(lc, { color: '#5a5a5a', weight: 2 }).addTo(map))
     } else {
-      L.polyline(coords, { color: '#5a5a5a', weight: 2, dashArray: '4 6' }).addTo(map)
+      layersRef.current.push(L.polyline(coords, { color: '#5a5a5a', weight: 2, dashArray: '4 6' }).addTo(map))
     }
 
+    // Passed line (orange)
     const passed = coords.slice(0, currentIdx + 1)
-    if (passed.length > 1) L.polyline(passed, { color: '#e8a020', weight: 3 }).addTo(map)
+    if (passed.length > 1) {
+      layersRef.current.push(L.polyline(passed, { color: '#e8a020', weight: 3 }).addTo(map))
+    }
 
-    stops.forEach((s, i) => {
+    // Stop markers
+    stops.forEach((sv, i) => {
       const isCur = i === currentIdx
-      const isPast = i <= currentIdx
+      const isPast = i < currentIdx
       const size = isCur ? 14 : 8
       const color = isCur ? '#e8a020' : isPast ? '#34c96a' : '#3a3a3a'
       const border = isCur ? '#f0b84a' : isPast ? '#34c96a' : '#5a5a5a'
       const icon = L.divIcon({
         className: '',
         html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid ${border};${isCur ? 'box-shadow:0 0 0 4px rgba(232,160,32,0.25)' : ''}"></div>`,
-        iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
       })
-      L.marker([s.stop.location.latitude, s.stop.location.longitude], { icon })
-        .addTo(map).bindPopup(`<b style="color:#e8a020">${s.stop.name}</b>`)
+      const marker = L.marker([sv.stop.location.latitude, sv.stop.location.longitude], { icon }).addTo(map)
+      marker.bindPopup(`<b style="color:#e8a020">${sv.stop.name}</b>`)
+      layersRef.current.push(marker)
     })
 
-    if (currentIdx >= 0 && coords[currentIdx]) map.setView(coords[currentIdx], 8)
-    else map.fitBounds(coords, { padding: [20, 20] })
-
-    return () => { map.remove(); mapRef.current = null }
-  }, [])
+    // Fit / center — important: invalidateSize first to handle overlay timing
+    setTimeout(() => {
+      try {
+        map.invalidateSize()
+        if (currentIdx >= 0 && coords[currentIdx]) {
+          map.setView(coords[currentIdx], 8)
+        } else {
+          map.fitBounds(coords, { padding: [20, 20] })
+        }
+      } catch {}
+    }, 50)
+  }, [stopovers, currentIdx, polyline])
 
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: 280, borderRadius: 12, overflow: 'hidden', background: '#141414' }}
+      style={{
+        width: '100%',
+        height: 280,
+        borderRadius: 12,
+        overflow: 'hidden',
+        background: '#141414',
+      }}
     />
   )
 }
