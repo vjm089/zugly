@@ -138,7 +138,11 @@ export default function MapView({ trips, currentSearchTrips }) {
     setLiveTrip(trip); setSelectedId(null); loadLive(trip)
   }
 
-  const todayTrips = (currentSearchTrips || []).filter(t => t?.tripId)
+  // Show saved logbook trips (most recent first) that have a tripId for live tracking
+  const logbookTrips = [...trips]
+    .filter(t => t?.tripId)
+    .sort((a, b) => new Date(b.depPlanned || 0) - new Date(a.depPlanned || 0))
+    .slice(0, 10)
   const progressPct = liveProgress
     ? Math.round(Math.max(0, liveProgress.currentIdx) / Math.max(1, liveProgress.total - 1) * 100)
     : 0
@@ -179,9 +183,9 @@ export default function MapView({ trips, currentSearchTrips }) {
 
         {panelTab === 'aktuell' && (
           <div style={s.liveList}>
-            {todayTrips.length === 0
-              ? <div style={s.empty}>Suche zuerst eine Verbindung.<br />Die Züge erscheinen hier zur Auswahl.</div>
-              : todayTrips.map((trip, i) => {
+            {logbookTrips.length === 0
+              ? <div style={s.empty}>Logge zuerst eine Fahrt im Tagebuch.<br />Dann kannst du sie hier live verfolgen.</div>
+              : logbookTrips.map((trip, i) => {
                 const isActive = liveTrip?.tripId === trip.tripId
                 return (
                   <div key={i} style={{ ...s.liveCard, ...(isActive ? s.liveCardActive : {}) }} onClick={() => selectLive(trip)}>
