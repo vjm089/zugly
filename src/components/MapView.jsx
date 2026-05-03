@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { fetchLiveTrip, formatTime, formatDate, calcDelayMin, getLiveProgress } from '../api.js'
 
-const COLORS = ['#e8a020','#4a9eff','#3ecf7a','#e8483a','#c47aff','#ff8c42','#00d4aa','#ff6b9d']
+const COLORS = ['#4a9eff','#60aaff','#2d7fe8','#78bcff','#1a6fd4','#5ab4ff','#3d8ff0','#87c9ff']
 
 const s = {
   wrap: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 72px)' },
@@ -99,13 +99,13 @@ export default function MapView({ trips, currentSearchTrips }) {
       const color = COLORS[i % COLORS.length]
       const isSelected = trip.id === selectedId
       layersRef.current.push(
-        L.polyline(coords, { color: isSelected ? color : '#333', weight: isSelected ? 4 : 2, opacity: isSelected ? 1 : 0.6 }).addTo(map)
+        L.polyline(coords, { color: isSelected ? color : '#2a5a9a', weight: isSelected ? 5 : 2, opacity: isSelected ? 1 : 0.55 }).addTo(map)
       )
       if (isSelected) {
         coords.forEach((c, ci) => {
           const isEnd = ci === 0 || ci === coords.length - 1
-          const size = isEnd ? 10 : 6
-          const icon = L.divIcon({ className: '', html: makeDotHtml(color, size), iconSize: [size, size], iconAnchor: [size/2, size/2] })
+          const size = isEnd ? 11 : 6
+          const icon = L.divIcon({ className: '', html: makeDotHtml(color, size, isEnd), iconSize: [size, size], iconAnchor: [size/2, size/2] })
           layersRef.current.push(L.marker(c, { icon }).addTo(map))
         })
         try { map.fitBounds(coords, { padding: [50, 50] }) } catch {}
