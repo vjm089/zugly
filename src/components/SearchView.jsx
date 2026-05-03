@@ -95,6 +95,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   const [loading, setLoading] = useState(false)
   const timer = useRef(null)
   const abortRef = useRef(null)
+  const justPicked = useRef(false)
 
   useEffect(() => { setQuery(value?.name || '') }, [value])
 
@@ -122,6 +123,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   }, [])
 
   function handleChange(e) {
+    if (justPicked.current) { justPicked.current = false; return }
     const q = e.target.value
     setQuery(q)
     onChange(null)
@@ -144,6 +146,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   }
 
   function pick(station) {
+    justPicked.current = true
     setQuery(station.name)
     setResults([])
     setOpen(false)
@@ -161,7 +164,11 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
           onChange={handleChange}
           placeholder={placeholder}
           onFocus={handleFocus}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
         />
       </div>
       {open && (
@@ -179,7 +186,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   )
 }
 
-export default function SearchView({ onLog, onLive }) {
+export default function SearchView({ onLog, onLive, onTrackLive }) {
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().slice(0, 16))
@@ -323,7 +330,7 @@ export default function SearchView({ onLog, onLive }) {
                     {legs.map(l => l.line?.product?.toUpperCase()).filter(Boolean).join('+')}
                   </span>
                   {tripData?.tripId && (
-                    <button style={s.liveBtn} onClick={() => onLive(tripData)}>
+                    <button style={s.liveBtn} onClick={() => (onLive || onTrackLive)?.(tripData)}>
                       ◉ Live
                     </button>
                   )}
