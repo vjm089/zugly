@@ -70,23 +70,21 @@ const s = {
 }
 
 const CACHE = new Map()
+const RECENT_KEY = 'zugly_recent_stations'
 
-const TOP_STATIONS = [
-  { id: '8000105', name: 'Frankfurt (Main) Hbf', type: 'stop' },
-  { id: '8011160', name: 'Berlin Hbf', type: 'stop' },
-  { id: '8000261', name: 'München Hbf', type: 'stop' },
-  { id: '8000157', name: 'Hamburg Hbf', type: 'stop' },
-  { id: '8000207', name: 'Köln Hbf', type: 'stop' },
-  { id: '8000096', name: 'Düsseldorf Hbf', type: 'stop' },
-  { id: '8000080', name: 'Dortmund Hbf', type: 'stop' },
-  { id: '8000098', name: 'Essen Hbf', type: 'stop' },
-  { id: '8000244', name: 'Mannheim Hbf', type: 'stop' },
-  { id: '8000191', name: 'Leipzig Hbf', type: 'stop' },
-  { id: '8000085', name: 'Dresden Hbf', type: 'stop' },
-  { id: '8000128', name: 'Hannover Hbf', type: 'stop' },
-  { id: '8000068', name: 'Stuttgart Hbf', type: 'stop' },
-  { id: '8000152', name: 'Nürnberg Hbf', type: 'stop' },
-]
+function loadRecentStations() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+  } catch { return [] }
+}
+
+function saveRecentStation(station) {
+  try {
+    const recent = loadRecentStations().filter(s => s.id !== station.id)
+    recent.unshift({ id: station.id, name: station.name, type: station.type })
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, 8)))
+  } catch {}
+}
 
 function StationInput({ label, value, onChange, onSelect, placeholder }) {
   const [query, setQuery] = useState(value?.name || '')
@@ -129,8 +127,9 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
     onChange(null)
     clearTimeout(timer.current)
     if (!q.trim()) {
-      setResults(TOP_STATIONS)
-      setOpen(true)
+      const recent = loadRecentStations()
+      setResults(recent)
+      setOpen(recent.length > 0)
       setLoading(false)
       return
     }
@@ -141,12 +140,16 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   }
 
   function handleFocus() {
-    if (!query.trim()) { setResults(TOP_STATIONS); setOpen(true) }
-    else if (results.length > 0) setOpen(true)
+    if (!query.trim()) {
+      const recent = loadRecentStations()
+      setResults(recent)
+      setOpen(recent.length > 0)
+    } else if (results.length > 0) setOpen(true)
   }
 
   function pick(station) {
     justPicked.current = true
+    saveRecentStation(station)
     setQuery(station.name)
     setResults([])
     setOpen(false)
@@ -174,12 +177,18 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
       {open && (
         <div style={{ ...s.dropdown, zIndex: label === 'VON' ? 102 : 101 }}>
           {loading && <div style={{ padding: '10px 16px', fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>Suche…</div>}
+          {!loading && !query.trim() && results.length > 0 && (
+            <div style={{ padding: '8px 16px 4px', fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)', letterSpacing: 0.4 }}>ZULETZT GESUCHT</div>
+          )}
           {!loading && results.map((r, i) => (
             <div key={r.id} style={i === results.length - 1 ? s.dropItemLast : s.dropItem} onPointerDown={e => { e.preventDefault(); pick(r) }}>
               <div style={s.dropName}>{r.name}</div>
               {r.location?.city && <div style={s.dropSub}>{r.location.city}</div>}
             </div>
           ))}
+          {!loading && !query.trim() && results.length === 0 && (
+            <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--muted)' }}>Tippe einen Bahnhofsnamen ein</div>
+          )}
         </div>
       )}
     </div>
