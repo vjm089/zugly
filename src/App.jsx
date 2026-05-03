@@ -81,7 +81,7 @@ export default function App() {
         {tab === 'live'    && <LiveView trip={liveTrip} onBack={() => setTab('search')} />}
         {tab === 'map'     && <MapView trips={trips} currentSearchTrips={currentSearchTrips} />}
         {tab === 'logbook' && <LogbookView trips={trips} onDelete={handleDelete} onTrackLive={handleTrackLive} />}
-        {tab === 'stats'   && <StatsView trips={trips} />}
+        {tab === 'stats'   && <StatsView trips={trips} onTripsChange={() => setTrips(loadTrips())} />}
       </main>
 
       <nav style={s.nav}>
