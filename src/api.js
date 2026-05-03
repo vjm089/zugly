@@ -124,16 +124,58 @@ export function calcJourneyDistanceKm(journey) {
   }, 0)
 }
 
+// Major German hub stations for train number lookup fallback
+const HUB_STATIONS = [
+  '8000105', // Frankfurt Hbf
+  '8011160', // Berlin Hbf
+  '8000261', // München Hbf
+  '8000157', // Hamburg Hbf
+  '8000207', // Köln Hbf
+  '8000128', // Hannover Hbf
+  '8000244', // Mannheim Hbf
+]
+
+// Normalize a train query like "ice 1091", "ICE1091", "ICE 1091" → "ICE 1091"
+function normalizeTrainQuery(q) {
+  const s = q.trim().toUpperCase().replace(/\s+/g, ' ')
+  // Insert space between letters and digits if missing: ICE1091 → ICE 1091
+  return s.replace(/^([A-ZÄÖÜ]+)\s*([0-9]+.*)$/, '$1 $2')
+}
+
 // Search a train by line/train number (e.g. "ICE 1091", "RE 4")
+// Uses departure boards from major hubs and filters by line name.
 export async function searchTrainByNumber(query, signal) {
   if (!query) return []
-  const path = `/trips?query=${encodeURIComponent(query)}&onlyCurrentlyRunning=false`
-  try {
-    const data = await apiFetch(path, signal)
-    return Array.isArray(data?.trips) ? data.trips : (Array.isArray(data) ? data : [])
-  } catch {
-    return []
+  const target = normalizeTrainQuery(query)
+
+  // Get departures from each hub for the next 6 hours, then filter by line name match
+  const when = new Date().toISOString()
+  const promises = HUB_STATIONS.map(stationId =>
+    apiFetch(`/stops/${stationId}/departures?when=${encodeURIComponent(when)}&duration=360&results=100`, signal)
+      .then(data => Array.isArray(data?.departures) ? data.departures : (Array.isArray(data) ? data : []))
+      .catch(() => [])
+  )
+
+  const results = (await Promise.all(promises)).flat()
+
+  // Filter by exact or partial line name match
+  const matches = results.filter(dep => {
+    const lineName = (dep.line?.name || '').toUpperCase().replace(/\s+/g, ' ')
+    return lineName === target || lineName.startsWith(target) || target.startsWith(lineName)
+  })
+
+  // Deduplicate by tripId
+  const seen = new Set()
+  const unique = []
+  for (const m of matches) {
+    const id = m.tripId || m.id
+    if (id && !seen.has(id)) { seen.add(id); unique.push(m) }
   }
+
+  // Sort by departure time
+  unique.sort((a, b) => new Date(a.plannedWhen || a.when || 0) - new Date(b.plannedWhen || b.when || 0))
+
+  return unique.slice(0, 10)
 }
 
 // Get train metadata (type, name) — used for logbook details

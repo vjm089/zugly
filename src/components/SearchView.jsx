@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm, searchTrainByNumber } from '../api.js'
+import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm, searchTrainByNumber, fetchLiveTrip } from '../api.js'
 
 const s = {
   wrap: { padding: '0 0 40px' },
@@ -216,23 +216,40 @@ export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
     try {
       if (searchMode === 'train') {
         if (!trainNumber.trim()) { setError('Bitte Zugnummer eingeben.'); return }
-        const trips = await searchTrainByNumber(trainNumber.trim())
-        if (!trips || trips.length === 0) { setError('Kein Zug mit dieser Nummer gefunden.'); return }
-        // Wrap each trip into a pseudo-journey so existing UI works
-        const wrapped = trips.slice(0, 8).map(t => ({
-          legs: [{
-            origin: t.origin || { name: t.line?.fahrtNr || '?' },
-            destination: t.destination || { name: '?' },
-            plannedDeparture: t.plannedDeparture || t.departure,
-            plannedArrival: t.plannedArrival || t.arrival,
-            departure: t.departure,
-            arrival: t.arrival,
-            line: t.line,
-            tripId: t.id || t.tripId,
-            stopovers: t.stopovers || [],
-            departurePlatform: t.departurePlatform,
-          }],
+        const departures = await searchTrainByNumber(trainNumber.trim())
+        if (!departures || departures.length === 0) {
+          setError('Kein Zug mit dieser Nummer in den nächsten Stunden gefunden. Tipp: Probier "ICE 1091" mit Leerzeichen.')
+          return
+        }
+        // Fetch full trip data for each departure to get destination + route
+        const fullTrips = await Promise.all(departures.slice(0, 6).map(async dep => {
+          const tripId = dep.tripId || dep.id
+          if (!tripId) return null
+          try {
+            const tripData = await fetchLiveTrip(tripId)
+            const stopovers = tripData?.stopovers || []
+            const lastStop = stopovers[stopovers.length - 1]
+            return {
+              legs: [{
+                origin: dep.stop || tripData?.origin || { name: stopovers[0]?.stop?.name || '?' },
+                destination: tripData?.destination || lastStop?.stop || { name: '?' },
+                plannedDeparture: dep.plannedWhen || stopovers[0]?.plannedDeparture,
+                plannedArrival: lastStop?.plannedArrival,
+                departure: dep.when || stopovers[0]?.departure,
+                arrival: lastStop?.arrival,
+                line: dep.line || tripData?.line,
+                tripId,
+                stopovers,
+                departurePlatform: dep.plannedPlatform || dep.platform,
+              }],
+            }
+          } catch { return null }
         }))
+        const wrapped = fullTrips.filter(Boolean)
+        if (wrapped.length === 0) {
+          setError('Zugdetails konnten nicht geladen werden.')
+          return
+        }
         setJourneys(wrapped)
         if (onResults) onResults(wrapped.map(j => buildTrip(j)).filter(Boolean))
       } else {
