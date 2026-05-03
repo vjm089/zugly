@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm } from '../api.js'
 
 const s = {
@@ -69,33 +69,85 @@ const s = {
   spinner: { margin: '32px auto', width: 22, height: 22, border: '2px solid var(--border2)', borderTop: '2px solid var(--amber)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' },
 }
 
+const CACHE = new Map()
+
+const TOP_STATIONS = [
+  { id: '8000105', name: 'Frankfurt (Main) Hbf', type: 'stop' },
+  { id: '8011160', name: 'Berlin Hbf', type: 'stop' },
+  { id: '8000261', name: 'München Hbf', type: 'stop' },
+  { id: '8000157', name: 'Hamburg Hbf', type: 'stop' },
+  { id: '8000207', name: 'Köln Hbf', type: 'stop' },
+  { id: '8000096', name: 'Düsseldorf Hbf', type: 'stop' },
+  { id: '8000080', name: 'Dortmund Hbf', type: 'stop' },
+  { id: '8000098', name: 'Essen Hbf', type: 'stop' },
+  { id: '8000244', name: 'Mannheim Hbf', type: 'stop' },
+  { id: '8000191', name: 'Leipzig Hbf', type: 'stop' },
+  { id: '8000085', name: 'Dresden Hbf', type: 'stop' },
+  { id: '8000128', name: 'Hannover Hbf', type: 'stop' },
+  { id: '8000068', name: 'Stuttgart Hbf', type: 'stop' },
+  { id: '8000152', name: 'Nürnberg Hbf', type: 'stop' },
+]
+
 function StationInput({ label, value, onChange, onSelect, placeholder }) {
   const [query, setQuery] = useState(value?.name || '')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   const timer = useRef(null)
+  const abortRef = useRef(null)
 
   useEffect(() => { setQuery(value?.name || '') }, [value])
+
+  const doSearch = useCallback(async (q) => {
+    const key = q.toLowerCase().trim()
+    if (CACHE.has(key)) {
+      setResults(CACHE.get(key))
+      setOpen(true)
+      setLoading(false)
+      return
+    }
+    if (abortRef.current) abortRef.current.abort()
+    abortRef.current = new AbortController()
+    try {
+      setLoading(true)
+      const r = await searchStations(q, abortRef.current.signal)
+      CACHE.set(key, r)
+      setResults(r)
+      setOpen(r.length > 0)
+    } catch (e) {
+      if (e.name !== 'AbortError') { setResults([]); setOpen(false) }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   function handleChange(e) {
     const q = e.target.value
     setQuery(q)
     onChange(null)
     clearTimeout(timer.current)
-    if (q.length < 2) { setResults([]); setOpen(false); return }
-    timer.current = setTimeout(async () => {
-      try {
-        const r = await searchStations(q)
-        setResults(r)
-        setOpen(r.length > 0)
-      } catch { setResults([]); setOpen(false) }
-    }, 300)
+    if (!q.trim()) {
+      setResults(TOP_STATIONS)
+      setOpen(true)
+      setLoading(false)
+      return
+    }
+    const key = q.toLowerCase().trim()
+    if (CACHE.has(key)) { doSearch(q); return }
+    setLoading(true)
+    timer.current = setTimeout(() => doSearch(q), 150)
+  }
+
+  function handleFocus() {
+    if (!query.trim()) { setResults(TOP_STATIONS); setOpen(true) }
+    else if (results.length > 0) setOpen(true)
   }
 
   function pick(station) {
     setQuery(station.name)
     setResults([])
     setOpen(false)
+    setLoading(false)
     onSelect(station)
   }
 
@@ -108,13 +160,14 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
           value={query}
           onChange={handleChange}
           placeholder={placeholder}
-          onFocus={() => results.length > 0 && setOpen(true)}
+          onFocus={handleFocus}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
       </div>
       {open && (
         <div style={{ ...s.dropdown, zIndex: label === 'VON' ? 102 : 101 }}>
-          {results.map((r, i) => (
+          {loading && <div style={{ padding: '10px 16px', fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>Suche…</div>}
+          {!loading && results.map((r, i) => (
             <div key={r.id} style={i === results.length - 1 ? s.dropItemLast : s.dropItem} onMouseDown={() => pick(r)}>
               <div style={s.dropName}>{r.name}</div>
               {r.location?.city && <div style={s.dropSub}>{r.location.city}</div>}
