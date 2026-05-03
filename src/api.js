@@ -1,34 +1,37 @@
 const BASE = 'https://v6.db.transport.rest'
+const PROXY = 'https://corsproxy.io/?url='
+
+async function apiFetch(url, signal) {
+  const headers = { Accept: 'application/json' }
+  try {
+    const res = await fetch(url, { headers, signal })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json()
+  } catch (e) {
+    if (e.name === 'AbortError') throw e
+    const res = await fetch(PROXY + encodeURIComponent(url), { headers })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json()
+  }
+}
 
 export async function searchStations(query, signal) {
   if (!query || query.length < 2) return []
-  const res = await fetch(
-    `${BASE}/locations?query=${encodeURIComponent(query)}&results=6&stops=true&addresses=false&poi=false`,
-    { headers: { Accept: 'application/json' }, signal }
-  )
-  if (!res.ok) throw new Error('Stationssuche fehlgeschlagen')
-  const data = await res.json()
+  const url = `${BASE}/locations?query=${encodeURIComponent(query)}&results=6&stops=true&addresses=false&poi=false`
+  const data = await apiFetch(url, signal)
   return data.filter(s => s.type === 'stop' || s.type === 'station')
 }
 
 export async function searchJourneys(fromId, toId, date) {
   const dep = date ? new Date(date).toISOString() : new Date().toISOString()
-  const res = await fetch(
-    `${BASE}/journeys?from=${fromId}&to=${toId}&departure=${encodeURIComponent(dep)}&results=5&stopovers=true&polyline=false&language=de`,
-    { headers: { Accept: 'application/json' } }
-  )
-  if (!res.ok) throw new Error('Verbindungssuche fehlgeschlagen')
-  const data = await res.json()
+  const url = `${BASE}/journeys?from=${fromId}&to=${toId}&departure=${encodeURIComponent(dep)}&results=5&stopovers=true&polyline=false&language=de`
+  const data = await apiFetch(url)
   return data.journeys || []
 }
 
 export async function fetchLiveTrip(tripId) {
-  const res = await fetch(
-    `${BASE}/trips/${encodeURIComponent(tripId)}?stopovers=true&polyline=true&language=de`,
-    { headers: { Accept: 'application/json' } }
-  )
-  if (!res.ok) throw new Error('Live-Daten nicht verfügbar')
-  const data = await res.json()
+  const url = `${BASE}/trips/${encodeURIComponent(tripId)}?stopovers=true&polyline=true&language=de`
+  const data = await apiFetch(url)
   return data.trip || data
 }
 
