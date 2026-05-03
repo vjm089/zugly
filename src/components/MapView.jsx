@@ -60,7 +60,7 @@ export default function MapView({ trips }) {
     const L = window.L
     if (!L || !containerRef.current || mapRef.current) return
     const map = L.map(containerRef.current, { zoomControl: true, attributionControl: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?lang=de', { maxZoom: 18, attribution: '© OpenStreetMap-Mitwirkende © CARTO' }).addTo(map)
     map.setView([51.16, 10.45], 6)
     mapRef.current = map
     setTimeout(() => map.invalidateSize(), 200)

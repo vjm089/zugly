@@ -9,7 +9,7 @@ export default function TrainMap({ stopovers, polyline, currentIdx }) {
     if (!L || !containerRef.current || mapRef.current) return
 
     const map = L.map(containerRef.current, { zoomControl: true, attributionControl: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?lang=de', { maxZoom: 18, attribution: '© OpenStreetMap-Mitwirkende © CARTO' }).addTo(map)
     mapRef.current = map
 
     const stops = (stopovers || []).filter(s => s.stop?.location)

@@ -123,3 +123,51 @@ export function calcJourneyDistanceKm(journey) {
     return sum + calcDistanceKmFromStopovers(leg.stopovers || [])
   }, 0)
 }
+
+// Search a train by line/train number (e.g. "ICE 1091", "RE 4")
+export async function searchTrainByNumber(query, signal) {
+  if (!query) return []
+  const path = `/trips?query=${encodeURIComponent(query)}&onlyCurrentlyRunning=false`
+  try {
+    const data = await apiFetch(path, signal)
+    return Array.isArray(data?.trips) ? data.trips : (Array.isArray(data) ? data : [])
+  } catch {
+    return []
+  }
+}
+
+// Get train metadata (type, name) — used for logbook details
+export function trainModelInfo(line) {
+  if (!line) return { displayName: '?', longName: 'Unbekannt', wikiImage: null }
+  const name = line.name || line.fahrtNr || '?'
+  const product = (line.product || '').toLowerCase()
+  const productName = line.productName || ''
+  
+  // Try to detect train series (ICE 1, ICE 3, ICE 4, etc.)
+  let series = null
+  let wikiImage = null
+  if (/^ICE\s*[0-9]/.test(name)) {
+    const num = parseInt(name.replace(/\D/g, ''), 10)
+    if (num < 1000) series = `ICE ${num}`
+    if (product === 'nationalexpress' || product.includes('ice')) {
+      wikiImage = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/ICE_3_Frankfurt_Sued.jpg/640px-ICE_3_Frankfurt_Sued.jpg'
+    }
+  } else if (product.includes('ic') || /^IC\s/.test(name)) {
+    series = 'IC'
+    wikiImage = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/IC_2_Doppelstockwagen.jpg/640px-IC_2_Doppelstockwagen.jpg'
+  } else if (/^RE\s/.test(name)) {
+    series = 'Regional-Express'
+  } else if (/^RB\s/.test(name)) {
+    series = 'Regionalbahn'
+  } else if (/^S\s?[0-9]/.test(name)) {
+    series = 'S-Bahn'
+  }
+
+  return {
+    displayName: name,
+    longName: series || productName || name,
+    wikiImage,
+    product: product || 'unknown',
+  }
+}
+

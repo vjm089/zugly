@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm } from '../api.js'
+import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm, searchTrainByNumber } from '../api.js'
 
 const s = {
   wrap: { padding: '0 0 40px' },
@@ -9,6 +9,9 @@ const s = {
   liveDot: { width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', animation: 'pulse 1.5s ease-in-out infinite' },
 
   searchWrap: { margin: '18px 16px 0' },
+  modeRow: { display: 'flex', gap: 6, marginBottom: 10, padding: '4px', background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12 },
+  modeBtn: { flex: 1, background: 'transparent', border: 'none', padding: '10px 0', fontSize: 13, fontFamily: 'var(--sans)', color: 'var(--muted)', borderRadius: 8, cursor: 'pointer', minHeight: 40 },
+  modeBtnActive: { background: 'var(--surface3)', color: 'var(--amber)', fontWeight: 500 },
   searchBox: { background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: '14px 14px 0 0', overflow: 'visible', position: 'relative' },
   row: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, borderBottom: '0.5px solid var(--border)', position: 'relative' },
   rowLast: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, position: 'relative' },
@@ -196,8 +199,10 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
 }
 
 export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
+  const [searchMode, setSearchMode] = useState('route')
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
+  const [trainNumber, setTrainNumber] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 16))
   const [journeys, setJourneys] = useState([])
   const [loading, setLoading] = useState(false)
@@ -207,14 +212,37 @@ export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
   function swap() { const t = from; setFrom(to); setTo(t); setJourneys([]) }
 
   async function search() {
-    if (!from || !to) return
     setLoading(true); setError(null); setJourneys([])
     try {
-      const r = await searchJourneys(from.id, to.id, date)
-      setJourneys(r)
-      if (r.length === 0) setError('Keine Verbindungen gefunden.')
-      else if (onResults) onResults(r.map(j => buildTrip(j)).filter(Boolean))
-    } catch (e) { setError(e.message) }
+      if (searchMode === 'train') {
+        if (!trainNumber.trim()) { setError('Bitte Zugnummer eingeben.'); return }
+        const trips = await searchTrainByNumber(trainNumber.trim())
+        if (!trips || trips.length === 0) { setError('Kein Zug mit dieser Nummer gefunden.'); return }
+        // Wrap each trip into a pseudo-journey so existing UI works
+        const wrapped = trips.slice(0, 8).map(t => ({
+          legs: [{
+            origin: t.origin || { name: t.line?.fahrtNr || '?' },
+            destination: t.destination || { name: '?' },
+            plannedDeparture: t.plannedDeparture || t.departure,
+            plannedArrival: t.plannedArrival || t.arrival,
+            departure: t.departure,
+            arrival: t.arrival,
+            line: t.line,
+            tripId: t.id || t.tripId,
+            stopovers: t.stopovers || [],
+            departurePlatform: t.departurePlatform,
+          }],
+        }))
+        setJourneys(wrapped)
+        if (onResults) onResults(wrapped.map(j => buildTrip(j)).filter(Boolean))
+      } else {
+        if (!from || !to) { setError('Bitte Start und Ziel auswählen.'); return }
+        const r = await searchJourneys(from.id, to.id, date)
+        setJourneys(r)
+        if (r.length === 0) setError('Keine Verbindungen gefunden.')
+        else if (onResults) onResults(r.map(j => buildTrip(j)).filter(Boolean))
+      }
+    } catch (e) { setError(e.message || 'Suche fehlgeschlagen.') }
     finally { setLoading(false) }
   }
 
@@ -256,16 +284,44 @@ export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
       </div>
 
       <div style={s.searchWrap}>
-        <div style={s.searchBox}>
-          <div style={s.row}>
-            <StationInput label="VON" value={from} onChange={setFrom} onSelect={setFrom} placeholder="Abfahrtsbahnhof" />
-            <button style={s.swapBtn} onClick={swap}>⇅</button>
-          </div>
-          <div style={s.rowLast}>
-            <StationInput label="NACH" value={to} onChange={setTo} onSelect={setTo} placeholder="Zielbahnhof" />
-          </div>
+        <div style={s.modeRow}>
+          <button
+            style={{ ...s.modeBtn, ...(searchMode === 'route' ? s.modeBtnActive : {}) }}
+            onClick={() => setSearchMode('route')}
+          >Strecke</button>
+          <button
+            style={{ ...s.modeBtn, ...(searchMode === 'train' ? s.modeBtnActive : {}) }}
+            onClick={() => setSearchMode('train')}
+          >Zugnummer</button>
         </div>
-        <div style={s.metaBox}>
+        {searchMode === 'route' ? (
+          <div style={s.searchBox}>
+            <div style={s.row}>
+              <StationInput label="VON" value={from} onChange={setFrom} onSelect={setFrom} placeholder="Abfahrtsbahnhof" />
+              <button style={s.swapBtn} onClick={swap}>⇅</button>
+            </div>
+            <div style={s.rowLast}>
+              <StationInput label="NACH" value={to} onChange={setTo} onSelect={setTo} placeholder="Zielbahnhof" />
+            </div>
+          </div>
+        ) : (
+          <div style={s.searchBox}>
+            <div style={s.rowLast}>
+              <span style={s.label}>ZUG</span>
+              <input
+                style={s.input}
+                value={trainNumber}
+                onChange={e => setTrainNumber(e.target.value)}
+                placeholder="z.B. ICE 1091, RE 6"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+              />
+            </div>
+          </div>
+        )}
+        {searchMode === "route" && <div style={s.metaBox}>
           <div style={s.metaPill}>
             <div style={s.metaLbl}>ABFAHRT</div>
             <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} style={s.dateInput} />
@@ -274,11 +330,11 @@ export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
             <div style={s.metaLbl}>KLASSE</div>
             <div style={s.metaVal}>2. Klasse</div>
           </div>
-        </div>
+        </div>}
         <button
           style={{ ...s.searchBtn, ...((!from || !to || loading) ? s.searchBtnDisabled : {}) }}
           onClick={search}
-          disabled={!from || !to || loading}
+          disabled={loading || (searchMode === "route" ? (!from || !to) : !trainNumber.trim())}
         >
           {loading ? 'Suche läuft…' : 'Verbindungen suchen'}
         </button>
