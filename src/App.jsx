@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import SearchView from './components/SearchView.jsx'
 import LogbookView from './components/LogbookView.jsx'
 import StatsView from './components/StatsView.jsx'
 import LiveView from './components/LiveView.jsx'
+import MapView from './components/MapView.jsx'
 import LogModal from './components/LogModal.jsx'
 import { loadTrips, saveTrip, deleteTrip } from './store.js'
 
 const s = {
   app: { minHeight: '100vh', display: 'flex', flexDirection: 'column', maxWidth: 480, margin: '0 auto', position: 'relative' },
   main: { flex: 1, overflowY: 'auto', paddingBottom: 72 },
+  mainNoScroll: { flex: 1, overflow: 'hidden', paddingBottom: 72 },
   nav: {
     position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
     width: '100%', maxWidth: 480, background: 'var(--surface)',
@@ -37,7 +39,7 @@ const s = {
 
 const TABS = [
   { id: 'search',  label: 'SUCHE', icon: '⊙' },
-  { id: 'live',    label: 'LIVE',  icon: '◉' },
+  { id: 'map',     label: 'KARTE', icon: '◎' },
   { id: 'logbook', label: 'BUCH',  icon: '≡' },
   { id: 'stats',   label: 'STATS', icon: '∿' },
 ]
@@ -48,6 +50,7 @@ export default function App() {
   const [pendingTrip, setPendingTrip] = useState(null)
   const [liveTrip, setLiveTrip] = useState(null)
   const [toast, setToast] = useState(null)
+  const [currentSearchTrips, setCurrentSearchTrips] = useState([])
 
   useEffect(() => { setTrips(loadTrips()) }, [])
 
@@ -66,13 +69,17 @@ export default function App() {
 
   function handleTrackLive(trip) { setLiveTrip(trip); setTab('live') }
 
+  function handleSearchResults(results) { setCurrentSearchTrips(results) }
+
   const tabIdx = TABS.findIndex(t => t.id === tab)
+  const isMap = tab === 'map'
 
   return (
     <div style={s.app}>
-      <main style={s.main}>
-        {tab === 'search'  && <SearchView onLog={handleLog} onTrackLive={handleTrackLive} />}
+      <main style={isMap ? s.mainNoScroll : s.main}>
+        {tab === 'search'  && <SearchView onLog={handleLog} onTrackLive={handleTrackLive} onResults={handleSearchResults} />}
         {tab === 'live'    && <LiveView trip={liveTrip} onBack={() => setTab('search')} />}
+        {tab === 'map'     && <MapView trips={trips} currentSearchTrips={currentSearchTrips} />}
         {tab === 'logbook' && <LogbookView trips={trips} onDelete={handleDelete} onTrackLive={handleTrackLive} />}
         {tab === 'stats'   && <StatsView trips={trips} />}
       </main>

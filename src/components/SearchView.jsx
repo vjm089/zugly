@@ -186,7 +186,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   )
 }
 
-export default function SearchView({ onLog, onLive, onTrackLive }) {
+export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().slice(0, 16))
@@ -204,6 +204,7 @@ export default function SearchView({ onLog, onLive, onTrackLive }) {
       const r = await searchJourneys(from.id, to.id, date)
       setJourneys(r)
       if (r.length === 0) setError('Keine Verbindungen gefunden.')
+      else if (onResults) onResults(r.map(j => buildTrip(j)).filter(Boolean))
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }
@@ -226,6 +227,15 @@ export default function SearchView({ onLog, onLive, onTrackLive }) {
       tripId: leg.tripId,
       changes: journeyChanges(journey),
       distanceKm: calcJourneyDistanceKm(journey),
+      stops: legs.flatMap(l =>
+        (l.stopovers || [])
+          .map(sv => ({
+            name: sv.stop?.name,
+            lat: sv.stop?.location?.latitude,
+            lng: sv.stop?.location?.longitude,
+          }))
+          .filter(sv => sv.lat && sv.lng)
+      ),
     }
   }
 
