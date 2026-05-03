@@ -47,7 +47,7 @@ export default function MapView({ trips, currentSearchTrips }) {
   const [liveLoading, setLiveLoading] = useState(false)
   const [liveProgress, setLiveProgress] = useState(null)
 
-  const tripsWithStops = trips.filter(t => t.stops?.length >= 2)
+  const tripsWithStops = trips.filter(t => !t.planned && t.stops?.length >= 2)
 
   useEffect(() => {
     const L = window.L
@@ -155,11 +155,15 @@ export default function MapView({ trips, currentSearchTrips }) {
         <div style={s.tabs}>
           <button style={{ ...s.tabBtn, ...(panelTab === 'vergangen' ? s.tabActive : {}) }}
             onClick={() => { setPanelTab('vergangen'); setLiveTrip(null); setLiveData(null) }}>
-            VERGANGENE REISEN
+            VERGANGEN
+          </button>
+          <button style={{ ...s.tabBtn, ...(panelTab === 'zukunft' ? s.tabActive : {}) }}
+            onClick={() => { setPanelTab('zukunft'); setSelectedId(null); setLiveTrip(null); setLiveData(null) }}>
+            GEPLANT
           </button>
           <button style={{ ...s.tabBtn, ...(panelTab === 'aktuell' ? s.tabActive : {}) }}
             onClick={() => { setPanelTab('aktuell'); setSelectedId(null) }}>
-            AKTUELLE FAHRT
+            AKTUELL
           </button>
         </div>
 
@@ -180,6 +184,36 @@ export default function MapView({ trips, currentSearchTrips }) {
             }
           </div>
         )}
+
+        {panelTab === 'zukunft' && (() => {
+          const futureTrips = trips.filter(t => t.planned && t.stops?.length >= 2)
+          const allFuture = trips.filter(t => t.planned)
+          return (
+            <div style={s.list}>
+              {allFuture.length === 0
+                ? <div style={s.empty}>Noch keine geplanten Reisen.<br />Klicke 📅 bei einem Suchergebnis.</div>
+                : allFuture.map((trip, i) => (
+                  <div key={trip.id}
+                    style={{ ...s.row, ...(trip.id === selectedId ? s.rowActive : {}) }}
+                    onClick={() => {
+                      if (futureTrips.find(t => t.id === trip.id)) {
+                        setSelectedId(trip.id === selectedId ? null : trip.id)
+                        setLiveTrip(null); setLiveData(null)
+                      }
+                    }}
+                  >
+                    <div style={{ ...s.dot, background: '#4a9eff', opacity: 0.7 }} />
+                    <div style={s.info}>
+                      <div style={s.route}>{trip.from?.split('(')[0].trim()} → {trip.to?.split('(')[0].trim()}</div>
+                      <div style={s.meta}>{trip.depPlanned ? new Date(trip.depPlanned).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '–'} · {trip.trainName}</div>
+                    </div>
+                    {trip.distanceKm > 0 && <span style={s.km}>{trip.distanceKm} km</span>}
+                  </div>
+                ))
+              }
+            </div>
+          )
+        })()}
 
         {panelTab === 'aktuell' && (
           <div style={s.liveList}>

@@ -62,7 +62,11 @@ export default function LogbookView({ trips, onDelete }) {
           {monthTrips.map(trip => (
             <div key={trip.id} style={s.card}>
               <div style={s.cardTop}>
-                <span style={s.trainBadge}>{trip.trainName || trip.trainType}</span>
+                <span style={trip.planned
+                  ? { ...s.trainBadge, background: 'var(--blue-dim)', color: 'var(--blue)' }
+                  : s.trainBadge}>
+                  {trip.planned ? '📅 ' : ''}{trip.trainName || trip.trainType}
+                </span>
                 <span style={s.dateText}>{trip.depPlanned ? formatDate(trip.depPlanned) : '–'}</span>
               </div>
               <div style={s.cardBody}>

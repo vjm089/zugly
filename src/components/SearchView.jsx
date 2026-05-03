@@ -58,6 +58,7 @@ const s = {
   chip: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface2)', border: '0.5px solid var(--border2)', padding: '3px 8px', borderRadius: 5, color: 'var(--text2)' },
   liveBtn: { marginLeft: 'auto', background: 'var(--blue-dim)', border: '0.5px solid rgba(74,158,255,0.3)', borderRadius: 10, padding: '10px 14px', color: 'var(--blue)', fontSize: 12, fontFamily: 'var(--mono)', minHeight: 40 },
   logBtn: { background: 'var(--amber)', border: 'none', borderRadius: 10, padding: '10px 16px', color: '#080808', fontSize: 13, fontWeight: 500, minHeight: 40 },
+  planBtn: { background: 'var(--blue-dim)', border: '0.5px solid rgba(74,158,255,0.3)', borderRadius: 10, padding: '10px 12px', color: 'var(--blue)', fontSize: 16, minHeight: 40 },
 
   legs: { borderTop: '0.5px solid var(--border)' },
   legRow: { padding: '10px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', gap: 10, alignItems: 'flex-start' },
@@ -353,6 +354,9 @@ export default function SearchView({ onLog, onLive, onTrackLive, onResults }) {
                       ◉ Live
                     </button>
                   )}
+                  <button style={s.planBtn} onClick={() => tripData && onLog({ ...tripData, planned: true })}>
+                    📅
+                  </button>
                   <button style={s.logBtn} onClick={() => tripData && onLog(tripData)}>
                     + Loggen
                   </button>
