@@ -13,12 +13,12 @@ const s = {
   row: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, borderBottom: '0.5px solid var(--border)', position: 'relative' },
   rowLast: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, position: 'relative' },
   label: { fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', width: 28, flexShrink: 0, letterSpacing: 0.3 },
-  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 14, padding: '14px 0' },
+  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 16, padding: '14px 0', minWidth: 0 },
   swapBtn: { background: 'var(--surface3)', border: '0.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', color: 'var(--amber)', fontSize: 14, lineHeight: 1 },
 
   dropdown: { position: 'absolute', top: 'calc(100% + 1px)', left: -1, right: -1, background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: '0 0 12px 12px', zIndex: 100, overflow: 'hidden' },
-  dropItem: { padding: '10px 16px', cursor: 'pointer', borderBottom: '0.5px solid var(--border)' },
-  dropItemLast: { padding: '10px 16px', cursor: 'pointer' },
+  dropItem: { padding: '14px 16px', cursor: 'pointer', borderBottom: '0.5px solid var(--border)', minHeight: 48 },
+  dropItemLast: { padding: '14px 16px', cursor: 'pointer', minHeight: 48 },
   dropName: { color: 'var(--text)', fontSize: 13, fontWeight: 500 },
   dropSub: { color: 'var(--muted)', fontSize: 11, marginTop: 1 },
 
@@ -29,7 +29,7 @@ const s = {
   metaVal: { fontSize: 13, color: 'var(--text)', marginTop: 2 },
   dateInput: { background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 13, width: '100%', cursor: 'pointer' },
 
-  searchBtn: { marginTop: 10, background: 'var(--amber)', border: 'none', borderRadius: 12, padding: '13px', width: '100%', color: '#080808', fontFamily: 'var(--sans)', fontSize: 14, fontWeight: 500, letterSpacing: 0.2 },
+  searchBtn: { marginTop: 10, background: 'var(--amber)', border: 'none', borderRadius: 12, padding: '16px', width: '100%', color: '#080808', fontFamily: 'var(--sans)', fontSize: 16, fontWeight: 500, letterSpacing: 0.2, minHeight: 52 },
   searchBtnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
 
   sectionTitle: { padding: '24px 16px 10px', fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)', letterSpacing: 0.5, textTransform: 'uppercase' },
@@ -56,8 +56,8 @@ const s = {
 
   cardFooter: { padding: '10px 16px', borderTop: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 },
   chip: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface2)', border: '0.5px solid var(--border2)', padding: '3px 8px', borderRadius: 5, color: 'var(--text2)' },
-  liveBtn: { marginLeft: 'auto', background: 'var(--blue-dim)', border: '0.5px solid rgba(74,158,255,0.3)', borderRadius: 8, padding: '6px 12px', color: 'var(--blue)', fontSize: 12, fontFamily: 'var(--mono)' },
-  logBtn: { background: 'var(--amber)', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#080808', fontSize: 12, fontWeight: 500 },
+  liveBtn: { marginLeft: 'auto', background: 'var(--blue-dim)', border: '0.5px solid rgba(74,158,255,0.3)', borderRadius: 10, padding: '10px 14px', color: 'var(--blue)', fontSize: 12, fontFamily: 'var(--mono)', minHeight: 40 },
+  logBtn: { background: 'var(--amber)', border: 'none', borderRadius: 10, padding: '10px 16px', color: '#080808', fontSize: 13, fontWeight: 500, minHeight: 40 },
 
   legs: { borderTop: '0.5px solid var(--border)' },
   legRow: { padding: '10px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', gap: 10, alignItems: 'flex-start' },
@@ -175,7 +175,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
         <div style={{ ...s.dropdown, zIndex: label === 'VON' ? 102 : 101 }}>
           {loading && <div style={{ padding: '10px 16px', fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>Suche…</div>}
           {!loading && results.map((r, i) => (
-            <div key={r.id} style={i === results.length - 1 ? s.dropItemLast : s.dropItem} onMouseDown={() => pick(r)}>
+            <div key={r.id} style={i === results.length - 1 ? s.dropItemLast : s.dropItem} onPointerDown={e => { e.preventDefault(); pick(r) }}>
               <div style={s.dropName}>{r.name}</div>
               {r.location?.city && <div style={s.dropSub}>{r.location.city}</div>}
             </div>

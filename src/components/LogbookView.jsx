@@ -19,7 +19,7 @@ const s = {
   cardFooter: { padding: '10px 16px', borderTop: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   metaChip: { fontSize: 11, color: 'var(--muted2)', background: 'var(--surface2)', padding: '3px 8px', borderRadius: 5, fontFamily: 'var(--mono)' },
   note: { fontSize: 12, color: 'var(--muted2)', fontStyle: 'italic', flex: 1 },
-  delBtn: { background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 16, padding: '2px 6px', borderRadius: 5, marginLeft: 'auto', cursor: 'pointer' },
+  delBtn: { background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 20, padding: '8px 12px', borderRadius: 8, marginLeft: 'auto', cursor: 'pointer', minHeight: 44, minWidth: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   delayBadge: { fontSize: 11, fontFamily: 'var(--mono)', padding: '3px 8px', borderRadius: 5 },
   delayOk: { background: 'var(--green-dim)', color: 'var(--green)' },
   delayBad: { background: 'var(--red-dim)', color: 'var(--red)' },

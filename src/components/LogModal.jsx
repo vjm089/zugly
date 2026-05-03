@@ -16,19 +16,19 @@ const s = {
   btnRow: { display: 'flex', gap: 8 },
   optBtn: {
     flex: 1, background: 'var(--surface2)', border: '0.5px solid var(--border2)',
-    borderRadius: 10, padding: '11px 6px', color: 'var(--muted2)',
-    fontSize: 13, cursor: 'pointer', textAlign: 'center', lineHeight: 1.3,
-    transition: 'all 0.12s',
+    borderRadius: 10, padding: '14px 6px', color: 'var(--muted2)',
+    fontSize: 14, cursor: 'pointer', textAlign: 'center', lineHeight: 1.3,
+    transition: 'all 0.12s', minHeight: 68, WebkitTapHighlightColor: 'transparent',
   },
   optBtnActive: {
     background: 'var(--amber-dim)', border: '0.5px solid var(--amber)',
     color: 'var(--amber)',
   },
   optIcon: { fontSize: 18, display: 'block', marginBottom: 4 },
-  textarea: { background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 10, padding: '11px 14px', fontSize: 14, color: 'var(--text)', width: '100%', fontFamily: 'var(--sans)', resize: 'none', minHeight: 80, outline: 'none' },
+  textarea: { background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 10, padding: '14px', fontSize: 16, color: 'var(--text)', width: '100%', fontFamily: 'var(--sans)', resize: 'none', minHeight: 90, outline: 'none' },
   actionRow: { display: 'flex', gap: 8, padding: '4px 20px 0' },
-  cancelBtn: { flex: 1, background: 'transparent', border: '0.5px solid var(--border2)', borderRadius: 10, padding: 13, color: 'var(--text)', fontSize: 14, cursor: 'pointer' },
-  saveBtn: { flex: 2, background: 'var(--amber)', border: 'none', borderRadius: 10, padding: 13, color: '#080808', fontSize: 14, fontWeight: 500, cursor: 'pointer' },
+  cancelBtn: { flex: 1, background: 'transparent', border: '0.5px solid var(--border2)', borderRadius: 12, padding: 16, color: 'var(--text)', fontSize: 16, cursor: 'pointer', minHeight: 54 },
+  saveBtn: { flex: 2, background: 'var(--amber)', border: 'none', borderRadius: 12, padding: 16, color: '#080808', fontSize: 16, fontWeight: 500, cursor: 'pointer', minHeight: 54 },
   divider: { height: '0.5px', background: 'var(--border)', margin: '0 20px 18px' },
 }
 
