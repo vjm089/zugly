@@ -15,7 +15,7 @@ export async function searchJourneys(fromId, toId, date) {
   const dep = date ? new Date(date).toISOString() : new Date().toISOString()
   const res = await fetch(
     `${BASE}/journeys?from=${fromId}&to=${toId}&departure=${encodeURIComponent(dep)}&results=5&stopovers=true&polyline=false&language=de`,
-    { headers: { Accept: 'application/json' }, signal }
+    { headers: { Accept: 'application/json' } }
   )
   if (!res.ok) throw new Error('Verbindungssuche fehlgeschlagen')
   const data = await res.json()
@@ -25,7 +25,7 @@ export async function searchJourneys(fromId, toId, date) {
 export async function fetchLiveTrip(tripId) {
   const res = await fetch(
     `${BASE}/trips/${encodeURIComponent(tripId)}?stopovers=true&polyline=true&language=de`,
-    { headers: { Accept: 'application/json' }, signal }
+    { headers: { Accept: 'application/json' } }
   )
   if (!res.ok) throw new Error('Live-Daten nicht verfügbar')
   const data = await res.json()
