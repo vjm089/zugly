@@ -90,7 +90,7 @@ export default function App() {
     <div style={s.app}>
       <main style={isMap ? s.mainNoScroll : s.main}>
         {tab === 'search'  && <SearchView onLog={handleLog} onTrackLive={handleTrackLive} onResults={handleSearchResults} />}
-        {tab === 'map'     && <MapView trips={trips} currentSearchTrips={currentSearchTrips} />}
+        {tab === 'map'     && <MapView trips={trips} />}
         {tab === 'logbook' && <LogbookView trips={trips} onDelete={handleDelete} onTrackLive={handleTrackLive} />}
         {tab === 'stats'   && <StatsView trips={trips} onTripsChange={refreshTrips} />}
       </main>

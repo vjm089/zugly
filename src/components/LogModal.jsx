@@ -59,8 +59,6 @@ export default function LogModal({ trip, onSave, onCancel }) {
   const [note, setNote] = useState('')
 
   if (!trip) return null
-  const isPlanned = !!trip.planned
-
   function handleSave() {
     onSave({ ...trip, klasse, sitztyp, position, note })
   }
@@ -73,8 +71,8 @@ export default function LogModal({ trip, onSave, onCancel }) {
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onCancel()}>
       <div style={s.sheet}>
         <div style={s.handle} />
-        <div style={s.title}>{isPlanned ? 'Reise planen' : 'Fahrt loggen'}</div>
-        <div style={s.sub}>{isPlanned ? 'Diese Verbindung als geplante Reise speichern' : 'Diese Verbindung zu deinem Tagebuch hinzufügen'}</div>
+        <div style={s.title}>Fahrt loggen</div>
+        <div style={s.sub}>Diese Verbindung zu deinem Tagebuch hinzufügen</div>
 
         <div style={s.summaryCard}>
           <div style={s.sumRow}><span style={s.sumLabel}>Strecke</span><span style={s.sumVal}>{trip.from?.split('(')[0].trim()} → {trip.to?.split('(')[0].trim()}</span></div>
@@ -131,7 +129,7 @@ export default function LogModal({ trip, onSave, onCancel }) {
 
         <div style={s.actionRow}>
           <button style={s.cancelBtn} onClick={onCancel}>Abbrechen</button>
-          <button style={s.saveBtn} onClick={handleSave}>{isPlanned ? '📅 Planen' : 'Speichern'}</button>
+          <button style={s.saveBtn} onClick={handleSave}>Speichern</button>
         </div>
       </div>
     </div>

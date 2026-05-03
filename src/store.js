@@ -25,7 +25,7 @@ function stationShort(name) {
 }
 
 export function computeStats(trips) {
-  const past = trips.filter(t => !t.planned)
+  const past = trips
 
   const totalKm = past.reduce((sum, t) => sum + (t.distanceKm || 0), 0)
   const totalMin = past.reduce((sum, t) => sum + (t.durationMin || 0), 0)
