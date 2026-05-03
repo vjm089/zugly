@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import SearchView from './components/SearchView.jsx'
 import LogbookView from './components/LogbookView.jsx'
 import StatsView from './components/StatsView.jsx'
-import LiveView from './components/LiveView.jsx'
 import MapView from './components/MapView.jsx'
 import LogModal from './components/LogModal.jsx'
+import LiveView from './components/LiveView.jsx'
 import { loadTrips, saveTrip, deleteTrip } from './store.js'
 
 const NAV_H = 56
@@ -60,6 +60,7 @@ export default function App() {
   const [trips, setTrips] = useState([])
   const [pendingTrip, setPendingTrip] = useState(null)
   const [liveTrip, setLiveTrip] = useState(null)
+  const [showLive, setShowLive] = useState(false)
   const [toast, setToast] = useState(null)
   const [currentSearchTrips, setCurrentSearchTrips] = useState([])
 
@@ -79,7 +80,7 @@ export default function App() {
   }
 
   function handleDelete(id) { deleteTrip(id); refreshTrips() }
-  function handleTrackLive(trip) { setLiveTrip(trip); setTab('live') }
+  function handleTrackLive(trip) { setLiveTrip(trip); setShowLive(true) }
   function handleSearchResults(results) { setCurrentSearchTrips(results) }
 
   const tabIdx = TABS.findIndex(t => t.id === tab)
@@ -89,7 +90,6 @@ export default function App() {
     <div style={s.app}>
       <main style={isMap ? s.mainNoScroll : s.main}>
         {tab === 'search'  && <SearchView onLog={handleLog} onTrackLive={handleTrackLive} onResults={handleSearchResults} />}
-        {tab === 'live'    && <LiveView trip={liveTrip} onBack={() => setTab('search')} />}
         {tab === 'map'     && <MapView trips={trips} currentSearchTrips={currentSearchTrips} />}
         {tab === 'logbook' && <LogbookView trips={trips} onDelete={handleDelete} onTrackLive={handleTrackLive} />}
         {tab === 'stats'   && <StatsView trips={trips} onTripsChange={refreshTrips} />}
@@ -110,6 +110,7 @@ export default function App() {
       </nav>
 
       {pendingTrip && <LogModal trip={pendingTrip} onSave={handleSaveTrip} onCancel={() => setPendingTrip(null)} />}
+      {showLive && liveTrip && <LiveView trip={liveTrip} onBack={() => setShowLive(false)} />}
       {toast && <div style={s.toast}>{toast}</div>}
     </div>
   )

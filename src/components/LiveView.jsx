@@ -3,8 +3,8 @@ import { fetchLiveTrip, formatTime, calcDelayMin, getLiveProgress } from '../api
 import TrainMap from './TrainMap.jsx'
 
 const s = {
-  wrap: { minHeight: '100dvh', background: 'var(--bg)', padding: '0 0 40px' },
-  header: { padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 12, paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' },
+  wrap: { position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 150, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 40 },
+  header: { padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 12, paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' },
   backBtn: { background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 10, padding: '0 16px', height: 44, color: 'var(--text)', fontSize: 15, flexShrink: 0 },
   logo: { fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 500, color: 'var(--amber)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 
