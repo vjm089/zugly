@@ -1,66 +1,72 @@
-import { useState, useEffect, useRef } from 'react'
-import { searchStations, searchJourneys, formatTime, formatDate, calcDuration, calcDelayMin, getLegs, journeyChanges } from '../api.js'
+import { useState, useRef, useEffect } from 'react'
+import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges } from '../api.js'
 
 const s = {
   wrap: { padding: '0 0 40px' },
   header: { padding: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   logo: { fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 500, color: 'var(--amber)', letterSpacing: -0.5 },
-  logoSub: { color: 'var(--muted)', fontSize: 12, fontWeight: 400, marginLeft: 8 },
-  liveDot: { width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', marginRight: 5 },
+  livePill: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--green)', fontFamily: 'var(--mono)', background: 'var(--green-dim)', padding: '4px 10px', borderRadius: 20 },
+  liveDot: { width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', animation: 'pulse 1.5s ease-in-out infinite' },
 
-  searchBox: { margin: '20px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: 12, overflow: 'visible', position: 'relative' },
+  searchWrap: { margin: '18px 16px 0' },
+  searchBox: { background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: '14px 14px 0 0', overflow: 'visible', position: 'relative' },
   row: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, borderBottom: '0.5px solid var(--border)', position: 'relative' },
   rowLast: { display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, position: 'relative' },
-  label: { fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', width: 30, flexShrink: 0 },
-  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 14, padding: '13px 0', width: '100%' },
-  swapBtn: { background: 'var(--surface2)', border: '0.5px solid var(--border2)', borderRadius: 6, padding: '5px 8px', color: 'var(--amber)', fontSize: 14, lineHeight: 1 },
+  label: { fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', width: 28, flexShrink: 0, letterSpacing: 0.3 },
+  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 14, padding: '14px 0' },
+  swapBtn: { background: 'var(--surface3)', border: '0.5px solid var(--border2)', borderRadius: 7, padding: '6px 10px', color: 'var(--amber)', fontSize: 14, lineHeight: 1 },
 
-  dropdown: { position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: '0 0 10px 10px', zIndex: 100, overflow: 'hidden' },
-  dropItem: { padding: '10px 16px', cursor: 'pointer', borderBottom: '0.5px solid var(--border)', fontSize: 13 },
-  dropItemName: { color: 'var(--text)', fontWeight: 500 },
-  dropItemSub: { color: 'var(--muted)', fontSize: 11, marginTop: 1 },
+  dropdown: { position: 'absolute', top: 'calc(100% + 1px)', left: -1, right: -1, background: 'var(--surface)', border: '0.5px solid var(--border2)', borderRadius: '0 0 12px 12px', zIndex: 100, overflow: 'hidden' },
+  dropItem: { padding: '10px 16px', cursor: 'pointer', borderBottom: '0.5px solid var(--border)' },
+  dropItemLast: { padding: '10px 16px', cursor: 'pointer' },
+  dropName: { color: 'var(--text)', fontSize: 13, fontWeight: 500 },
+  dropSub: { color: 'var(--muted)', fontSize: 11, marginTop: 1 },
 
-  metaRow: { display: 'flex', margin: '0 20px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px' },
-  metaPill: { flex: 1, padding: '10px 16px', borderRight: '0.5px solid var(--border)', cursor: 'default' },
-  metaLabel: { fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)' },
+  metaBox: { display: 'flex', background: 'var(--surface)', border: '0.5px solid var(--border2)', borderTop: 'none', borderRadius: '0 0 14px 14px' },
+  metaPill: { flex: 1, padding: '10px 16px', borderRight: '0.5px solid var(--border)' },
+  metaPillLast: { flex: 1, padding: '10px 16px' },
+  metaLbl: { fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)', letterSpacing: 0.3 },
   metaVal: { fontSize: 13, color: 'var(--text)', marginTop: 2 },
+  dateInput: { background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 13, width: '100%', cursor: 'pointer' },
 
-  searchBtn: { margin: '12px 20px 0', background: 'var(--amber)', border: 'none', borderRadius: 10, padding: 12, width: 'calc(100% - 40px)', color: '#0c0c0c', fontFamily: 'var(--sans)', fontSize: 14, fontWeight: 500 },
-  searchBtnDisabled: { opacity: 0.4, cursor: 'not-allowed' },
+  searchBtn: { marginTop: 10, background: 'var(--amber)', border: 'none', borderRadius: 12, padding: '13px', width: '100%', color: '#080808', fontFamily: 'var(--sans)', fontSize: 14, fontWeight: 500, letterSpacing: 0.2 },
+  searchBtnDisabled: { opacity: 0.35, cursor: 'not-allowed' },
 
-  sectionTitle: { padding: '28px 20px 10px', fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)', letterSpacing: 0.5, textTransform: 'uppercase' },
+  sectionTitle: { padding: '24px 16px 10px', fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--mono)', letterSpacing: 0.5, textTransform: 'uppercase' },
 
-  card: { margin: '0 20px 8px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, overflow: 'hidden' },
-  cardHeader: { padding: '14px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+  card: { margin: '0 16px 8px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 14, overflow: 'hidden', animation: 'fadeUp 0.25s ease both', cursor: 'pointer' },
+  cardActive: { border: '0.5px solid var(--border3)' },
+  cardTop: { padding: '13px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   trainId: { fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' },
-  trainName: { fontSize: 16, fontWeight: 500, marginTop: 2 },
-  badge: { fontFamily: 'var(--mono)', fontSize: 11, padding: '4px 8px', borderRadius: 6 },
+  trainName: { fontSize: 16, fontWeight: 500, marginTop: 2, letterSpacing: -0.2 },
+  badge: { fontFamily: 'var(--mono)', fontSize: 11, padding: '4px 10px', borderRadius: 20 },
   badgeGreen: { background: 'var(--green-dim)', color: 'var(--green)' },
   badgeAmber: { background: 'var(--amber-dim)', color: 'var(--amber)' },
 
-  journeyRow: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 0 },
-  stationBlock: { textAlign: 'left' },
-  stationBlockRight: { textAlign: 'right' },
-  stationTime: { fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 500, letterSpacing: -0.5 },
-  stationName: { fontSize: 12, color: 'var(--muted)', marginTop: 2 },
-  journeyLine: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 12px' },
-  duration: { fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: 4 },
-  lineTrack: { width: '100%', height: 1, background: 'var(--border2)' },
-  changes: { fontSize: 11, color: 'var(--muted)', marginTop: 4 },
+  journeyRow: { padding: '14px 16px', display: 'flex', alignItems: 'center' },
+  stBlock: {},
+  stBlockR: { textAlign: 'right' },
+  stTime: { fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 500, letterSpacing: -1 },
+  stName: { fontSize: 12, color: 'var(--text2)', marginTop: 3 },
+  midLine: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 14px' },
+  dur: { fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: 6 },
+  track: { width: '100%', height: 1, background: 'var(--border2)', position: 'relative' },
+  trackFill: { height: '100%', background: 'var(--amber)', position: 'absolute', left: 0, top: 0 },
+  changes: { fontSize: 11, color: 'var(--muted)', marginTop: 5 },
 
   cardFooter: { padding: '10px 16px', borderTop: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 },
-  trackPill: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface2)', border: '0.5px solid var(--border2)', padding: '3px 8px', borderRadius: 5, color: 'var(--text)' },
-  logBtn: { marginLeft: 'auto', background: 'var(--amber)', border: 'none', borderRadius: 8, padding: '6px 14px', color: '#0c0c0c', fontSize: 13, fontWeight: 500 },
+  chip: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface2)', border: '0.5px solid var(--border2)', padding: '3px 8px', borderRadius: 5, color: 'var(--text2)' },
+  liveBtn: { marginLeft: 'auto', background: 'var(--blue-dim)', border: '0.5px solid rgba(74,158,255,0.3)', borderRadius: 8, padding: '6px 12px', color: 'var(--blue)', fontSize: 12, fontFamily: 'var(--mono)' },
+  logBtn: { background: 'var(--amber)', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#080808', fontSize: 12, fontWeight: 500 },
 
   legs: { borderTop: '0.5px solid var(--border)' },
   legRow: { padding: '10px 16px', borderBottom: '0.5px solid var(--border)', display: 'flex', gap: 10, alignItems: 'flex-start' },
-  legIcon: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface2)', padding: '3px 7px', borderRadius: 4, color: 'var(--amber)', flexShrink: 0, marginTop: 1 },
-  legInfo: { flex: 1 },
-  legStations: { fontSize: 13, color: 'var(--text)' },
-  legTime: { fontSize: 11, color: 'var(--muted)', marginTop: 2, fontFamily: 'var(--mono)' },
+  legTag: { fontFamily: 'var(--mono)', fontSize: 11, background: 'var(--surface3)', padding: '3px 8px', borderRadius: 4, color: 'var(--amber)', flexShrink: 0 },
+  legStations: { fontSize: 13, color: 'var(--text2)', flex: 1 },
+  legTimes: { fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' },
 
-  err: { margin: '16px 20px', padding: '12px 16px', background: 'var(--red-dim)', border: '0.5px solid var(--red)', borderRadius: 10, fontSize: 13, color: 'var(--red)' },
-  spinner: { margin: '32px auto', width: 24, height: 24, border: '2px solid var(--border2)', borderTop: '2px solid var(--amber)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' },
+  err: { margin: '14px 16px 0', padding: '12px 16px', background: 'var(--red-dim)', border: '0.5px solid var(--red)', borderRadius: 10, fontSize: 13, color: 'var(--red)' },
+  spinner: { margin: '32px auto', width: 22, height: 22, border: '2px solid var(--border2)', borderTop: '2px solid var(--amber)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' },
 }
 
 function StationInput({ label, value, onChange, onSelect, placeholder }) {
@@ -68,7 +74,6 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
   const timer = useRef(null)
-  const inputRef = useRef(null)
 
   useEffect(() => { setQuery(value?.name || '') }, [value])
 
@@ -99,7 +104,6 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={s.label}>{label}</span>
         <input
-          ref={inputRef}
           style={s.input}
           value={query}
           onChange={handleChange}
@@ -109,11 +113,11 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
         />
       </div>
       {open && (
-        <div style={s.dropdown}>
-          {results.map(r => (
-            <div key={r.id} style={s.dropItem} onMouseDown={() => pick(r)}>
-              <div style={s.dropItemName}>{r.name}</div>
-              {r.location?.city && <div style={s.dropItemSub}>{r.location.city}</div>}
+        <div style={{ ...s.dropdown, zIndex: label === 'VON' ? 102 : 101 }}>
+          {results.map((r, i) => (
+            <div key={r.id} style={i === results.length - 1 ? s.dropItemLast : s.dropItem} onMouseDown={() => pick(r)}>
+              <div style={s.dropName}>{r.name}</div>
+              {r.location?.city && <div style={s.dropSub}>{r.location.city}</div>}
             </div>
           ))}
         </div>
@@ -122,24 +126,7 @@ function StationInput({ label, value, onChange, onSelect, placeholder }) {
   )
 }
 
-function LegLine({ leg }) {
-  const name = leg.line?.name || leg.line?.fahrtNr || '?'
-  const dep = formatTime(leg.plannedDeparture || leg.departure)
-  const arr = formatTime(leg.plannedArrival || leg.arrival)
-  const from = leg.origin?.name || '?'
-  const to = leg.destination?.name || '?'
-  return (
-    <div style={s.legRow}>
-      <span style={s.legIcon}>{name}</span>
-      <div style={s.legInfo}>
-        <div style={s.legStations}>{from} → {to}</div>
-        <div style={s.legTime}>{dep} – {arr}</div>
-      </div>
-    </div>
-  )
-}
-
-export default function SearchView({ onLog }) {
+export default function SearchView({ onLog, onLive }) {
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().slice(0, 16))
@@ -148,54 +135,35 @@ export default function SearchView({ onLog }) {
   const [error, setError] = useState(null)
   const [expanded, setExpanded] = useState(null)
 
-  function swap() {
-    const tmp = from
-    setFrom(to)
-    setTo(tmp)
-    setJourneys([])
-  }
+  function swap() { const t = from; setFrom(to); setTo(t); setJourneys([]) }
 
   async function search() {
     if (!from || !to) return
-    setLoading(true)
-    setError(null)
-    setJourneys([])
+    setLoading(true); setError(null); setJourneys([])
     try {
-      const results = await searchJourneys(from.id, to.id, date)
-      setJourneys(results)
-      if (results.length === 0) setError('Keine Verbindungen gefunden.')
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+      const r = await searchJourneys(from.id, to.id, date)
+      setJourneys(r)
+      if (r.length === 0) setError('Keine Verbindungen gefunden.')
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
   }
 
-  function buildTripData(journey, legIndex) {
+  function buildTrip(journey) {
     const legs = getLegs(journey)
-    const leg = legs[legIndex] || legs[0]
+    const leg = legs[0]
     if (!leg) return null
-    const depPlanned = leg.plannedDeparture || leg.departure
-    const arrPlanned = leg.plannedArrival || leg.arrival
-    const depActual = leg.departure
-    const arrActual = leg.arrival
-    const durationMin = Math.round((new Date(arrPlanned) - new Date(depPlanned)) / 60000)
-    const delayArrMin = calcDelayMin(arrPlanned, arrActual)
     return {
       from: leg.origin?.name || from?.name,
       to: leg.destination?.name || to?.name,
-      fromId: leg.origin?.id || from?.id,
-      toId: leg.destination?.id || to?.id,
-      depPlanned,
-      arrPlanned,
-      depActual,
-      arrActual,
-      durationMin,
-      delayArrMin,
+      depPlanned: leg.plannedDeparture || leg.departure,
+      arrPlanned: leg.plannedArrival || leg.arrival,
+      depActual: leg.departure,
+      arrActual: leg.arrival,
+      durationMin: Math.round((new Date(leg.plannedArrival || leg.arrival) - new Date(leg.plannedDeparture || leg.departure)) / 60000),
+      delayArrMin: calcDelayMin(leg.plannedArrival, leg.arrival),
       trainType: leg.line?.product?.toUpperCase() || 'ICE',
       trainName: leg.line?.name || '?',
       tripId: leg.tripId,
-      stopovers: leg.stopovers || [],
       changes: journeyChanges(journey),
       distanceKm: 0,
     }
@@ -203,109 +171,111 @@ export default function SearchView({ onLog }) {
 
   return (
     <div style={s.wrap}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={s.header}>
-        <div style={s.logo}>zugly <span style={s.logoSub}>DE</span></div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-          <span style={s.liveDot} />live
-        </div>
+        <div style={s.logo}>zugly</div>
+        <div style={s.livePill}><span style={s.liveDot} />DB Echtzeit</div>
       </div>
 
-      <div style={s.searchBox}>
-        <div style={s.row}>
-          <StationInput label="VON" value={from} onChange={setFrom} onSelect={setFrom} placeholder="Abfahrtsbahnhof" />
-          <button style={s.swapBtn} onClick={swap}>⇅</button>
+      <div style={s.searchWrap}>
+        <div style={s.searchBox}>
+          <div style={s.row}>
+            <StationInput label="VON" value={from} onChange={setFrom} onSelect={setFrom} placeholder="Abfahrtsbahnhof" />
+            <button style={s.swapBtn} onClick={swap}>⇅</button>
+          </div>
+          <div style={s.rowLast}>
+            <StationInput label="NACH" value={to} onChange={setTo} onSelect={setTo} placeholder="Zielbahnhof" />
+          </div>
         </div>
-        <div style={s.rowLast}>
-          <StationInput label="NACH" value={to} onChange={setTo} onSelect={setTo} placeholder="Zielbahnhof" />
+        <div style={s.metaBox}>
+          <div style={s.metaPill}>
+            <div style={s.metaLbl}>ABFAHRT</div>
+            <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} style={s.dateInput} />
+          </div>
+          <div style={s.metaPillLast}>
+            <div style={s.metaLbl}>KLASSE</div>
+            <div style={s.metaVal}>2. Klasse</div>
+          </div>
         </div>
+        <button
+          style={{ ...s.searchBtn, ...((!from || !to || loading) ? s.searchBtnDisabled : {}) }}
+          onClick={search}
+          disabled={!from || !to || loading}
+        >
+          {loading ? 'Suche läuft…' : 'Verbindungen suchen'}
+        </button>
       </div>
-
-      <div style={s.metaRow}>
-        <div style={s.metaPill}>
-          <div style={s.metaLabel}>DATUM & ZEIT</div>
-          <input
-            type="datetime-local"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', fontFamily: 'var(--sans)', fontSize: 13, marginTop: 2, width: '100%', cursor: 'pointer' }}
-          />
-        </div>
-        <div style={{ ...s.metaPill, borderRight: 'none' }}>
-          <div style={s.metaLabel}>API</div>
-          <div style={s.metaVal}>DB Echtzeit</div>
-        </div>
-      </div>
-
-      <button
-        style={{ ...s.searchBtn, ...((!from || !to) ? s.searchBtnDisabled : {}) }}
-        onClick={search}
-        disabled={!from || !to || loading}
-      >
-        {loading ? 'Suche läuft…' : 'Verbindungen suchen'}
-      </button>
 
       {error && <div style={s.err}>{error}</div>}
-
       {loading && <div style={s.spinner} />}
 
       {journeys.length > 0 && (
         <>
-          <div style={s.sectionTitle}>Verbindungen — {from?.name?.split('(')[0].trim()} → {to?.name?.split('(')[0].trim()}</div>
+          <div style={s.sectionTitle}>
+            {journeys.length} Verbindungen · {from?.name?.split('(')[0].trim()} → {to?.name?.split('(')[0].trim()}
+          </div>
           {journeys.map((journey, ji) => {
             const legs = getLegs(journey)
-            const firstLeg = legs[0]
-            const lastLeg = legs[legs.length - 1]
-            if (!firstLeg || !lastLeg) return null
-            const dep = formatTime(firstLeg.plannedDeparture || firstLeg.departure)
-            const arr = formatTime(lastLeg.plannedArrival || lastLeg.arrival)
-            const dur = calcDuration(firstLeg.plannedDeparture, lastLeg.plannedArrival)
+            const first = legs[0], last = legs[legs.length - 1]
+            if (!first || !last) return null
+            const dep = formatTime(first.plannedDeparture || first.departure)
+            const arr = formatTime(last.plannedArrival || last.arrival)
+            const dur = calcDuration(first.plannedDeparture, last.plannedArrival)
             const changes = journeyChanges(journey)
             const isOpen = expanded === ji
+            const tripData = buildTrip(journey)
 
             return (
-              <div key={ji} style={s.card}>
-                <div style={{ ...s.cardHeader, cursor: 'pointer' }} onClick={() => setExpanded(isOpen ? null : ji)}>
+              <div key={ji} style={{ ...s.card, ...(isOpen ? s.cardActive : {}), animationDelay: `${ji * 0.05}s` }}>
+                <div style={s.cardTop} onClick={() => setExpanded(isOpen ? null : ji)}>
                   <div>
-                    <div style={s.trainId}>
-                      {legs.map(l => l.line?.name).filter(Boolean).join(' · ')}
-                    </div>
-                    <div style={s.trainName}>{firstLeg.origin?.name?.split('(')[0]} → {lastLeg.destination?.name?.split('(')[0]}</div>
+                    <div style={s.trainId}>{legs.map(l => l.line?.name).filter(Boolean).join(' · ')}</div>
+                    <div style={s.trainName}>{first.origin?.name?.split('(')[0]} → {last.destination?.name?.split('(')[0]}</div>
                   </div>
                   <span style={changes === 0 ? s.badgeGreen : s.badgeAmber}>
                     {changes === 0 ? 'Direkt' : `${changes}× Umstieg`}
                   </span>
                 </div>
 
-                <div style={s.journeyRow}>
-                  <div style={s.stationBlock}>
-                    <div style={s.stationTime}>{dep}</div>
-                    <div style={s.stationName}>{firstLeg.origin?.name?.split('(')[0]}</div>
+                <div style={s.journeyRow} onClick={() => setExpanded(isOpen ? null : ji)}>
+                  <div style={s.stBlock}>
+                    <div style={s.stTime}>{dep}</div>
+                    <div style={s.stName}>{first.origin?.name?.split('(')[0]}</div>
                   </div>
-                  <div style={s.journeyLine}>
-                    <div style={s.duration}>{dur}</div>
-                    <div style={s.lineTrack} />
+                  <div style={s.midLine}>
+                    <div style={s.dur}>{dur}</div>
+                    <div style={s.track}><div style={s.trackFill} /></div>
                     <div style={s.changes}>{changes === 0 ? 'Direktzug' : `${changes} Umstieg${changes > 1 ? 'e' : ''}`}</div>
                   </div>
-                  <div style={s.stationBlockRight}>
-                    <div style={s.stationTime}>{arr}</div>
-                    <div style={{ ...s.stationName, textAlign: 'right' }}>{lastLeg.destination?.name?.split('(')[0]}</div>
+                  <div style={s.stBlockR}>
+                    <div style={s.stTime}>{arr}</div>
+                    <div style={{ ...s.stName, textAlign: 'right' }}>{last.destination?.name?.split('(')[0]}</div>
                   </div>
                 </div>
 
                 {isOpen && (
                   <div style={s.legs}>
-                    {legs.map((leg, li) => <LegLine key={li} leg={leg} />)}
+                    {legs.map((leg, li) => (
+                      <div key={li} style={s.legRow}>
+                        <span style={s.legTag}>{leg.line?.name || '?'}</span>
+                        <span style={s.legStations}>{leg.origin?.name?.split('(')[0]} → {leg.destination?.name?.split('(')[0]}</span>
+                        <span style={s.legTimes}>{formatTime(leg.plannedDeparture)} – {formatTime(leg.plannedArrival)}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 <div style={s.cardFooter}>
-                  <span style={s.trackPill}>Gl. {firstLeg.departurePlatform || '?'}</span>
-                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  <span style={s.chip}>Gl. {first.departurePlatform || '?'}</span>
+                  <span style={{ ...s.chip, border: 'none', background: 'transparent', paddingLeft: 0 }}>
                     {legs.map(l => l.line?.product?.toUpperCase()).filter(Boolean).join('+')}
                   </span>
-                  <button style={s.logBtn} onClick={() => onLog(buildTripData(journey, 0))}>
-                    + Fahrt loggen
+                  {tripData?.tripId && (
+                    <button style={s.liveBtn} onClick={() => onLive(tripData)}>
+                      ◉ Live
+                    </button>
+                  )}
+                  <button style={s.logBtn} onClick={() => tripData && onLog(tripData)}>
+                    + Loggen
                   </button>
                 </div>
               </div>
