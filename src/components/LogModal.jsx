@@ -28,7 +28,7 @@ const RATINGS = ['😴', '😕', '😐', '🙂', '😄']
 
 export default function LogModal({ trip, onSave, onCancel }) {
   const [note, setNote] = useState('')
-  const [km, setKm] = useState('')
+  const [km, setKm] = useState(trip?.distanceKm > 0 ? String(trip.distanceKm) : '')
   const [rating, setRating] = useState(null)
   const [seatNo, setSeatNo] = useState('')
 
@@ -76,7 +76,14 @@ export default function LogModal({ trip, onSave, onCancel }) {
         </div>
 
         <div style={s.section}>
-          <div style={s.fieldLabel}>STRECKE (KM)</div>
+          <div style={{ ...s.fieldLabel, display: 'flex', alignItems: 'center', gap: 8 }}>
+            STRECKE (KM)
+            {trip?.distanceKm > 0 && (
+              <span style={{ fontSize: 10, background: 'var(--green-dim)', color: 'var(--green)', padding: '2px 7px', borderRadius: 10, fontFamily: 'var(--mono)' }}>
+                auto ✓
+              </span>
+            )}
+          </div>
           <input style={s.field} type="number" placeholder="z.B. 492" value={km} onChange={e => setKm(e.target.value)} />
         </div>
 

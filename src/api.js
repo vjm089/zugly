@@ -76,3 +76,37 @@ export function getLiveProgress(stopovers) {
   }
   return { currentIdx: lastPassed, total: stopovers.length }
 }
+
+// Haversine formula — distance between two lat/lng points in km
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// Calculate total route distance from a leg's stopovers
+export function calcDistanceKmFromStopovers(stopovers) {
+  if (!stopovers || stopovers.length < 2) return 0
+  let total = 0
+  for (let i = 0; i < stopovers.length - 1; i++) {
+    const a = stopovers[i]?.stop?.location
+    const b = stopovers[i + 1]?.stop?.location
+    if (a?.latitude && a?.longitude && b?.latitude && b?.longitude) {
+      total += haversine(a.latitude, a.longitude, b.latitude, b.longitude)
+    }
+  }
+  return Math.round(total)
+}
+
+// Calculate distance across all legs of a journey
+export function calcJourneyDistanceKm(journey) {
+  const legs = getLegs(journey)
+  return legs.reduce((sum, leg) => {
+    return sum + calcDistanceKmFromStopovers(leg.stopovers || [])
+  }, 0)
+}

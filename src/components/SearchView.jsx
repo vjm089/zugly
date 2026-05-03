@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges } from '../api.js'
+import { searchStations, searchJourneys, formatTime, calcDuration, calcDelayMin, getLegs, journeyChanges, calcJourneyDistanceKm } from '../api.js'
 
 const s = {
   wrap: { padding: '0 0 40px' },
@@ -165,7 +165,7 @@ export default function SearchView({ onLog, onLive }) {
       trainName: leg.line?.name || '?',
       tripId: leg.tripId,
       changes: journeyChanges(journey),
-      distanceKm: 0,
+      distanceKm: calcJourneyDistanceKm(journey),
     }
   }
 
