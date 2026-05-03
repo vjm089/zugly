@@ -26,8 +26,6 @@ const s = {
   rating: { fontSize: 16 },
 }
 
-const RATINGS = ['😴', '😕', '😐', '🙂', '😄']
-
 export default function LogbookView({ trips, onDelete }) {
   if (trips.length === 0) {
     return (
@@ -82,8 +80,9 @@ export default function LogbookView({ trips, onDelete }) {
                     {trip.delayArrMin <= 5 ? 'Pünktlich' : `+${trip.delayArrMin} Min`}
                   </span>
                 )}
-                {trip.seatNo && <span style={s.metaChip}>{trip.seatNo}</span>}
-                {trip.rating !== null && trip.rating !== undefined && <span style={s.rating}>{RATINGS[trip.rating]}</span>}
+                {trip.klasse && <span style={s.metaChip}>{trip.klasse === '1' ? '1. Kl.' : '2. Kl.'}</span>}
+                {trip.sitztyp && <span style={s.metaChip}>{{ einzelplatz: 'Einzelplatz', gruppentisch: 'Gruppentisch', abteil: 'Abteil' }[trip.sitztyp]}</span>}
+                {trip.position && <span style={s.metaChip}>{{ fenster: 'Fenster', gang: 'Gang' }[trip.position]}</span>}
                 {trip.note && <span style={s.note}>„{trip.note}"</span>}
                 <button style={s.delBtn} onClick={() => onDelete(trip.id)} title="Löschen">×</button>
               </div>
